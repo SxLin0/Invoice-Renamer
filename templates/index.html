@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小猫发票改名器</title>
+    <link rel="icon" href="{{ url_for('static', filename='icon.jpg') }}" type="image/jpeg">
+    <style>
+        :root {
+            --cat-avatar: url('icon.jpg');
+            --pink: #ffe0f0;
+            --deep-pink: #ff85a2;
+            --grey: #fafafa;
+            --text: #555;
+            --radius: 18px;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: var(--grey);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 640px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--pink);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px 20px;
+        }
+
+        .cat {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: white var(--cat-avatar) center/cover;
+            border: 4px solid white;
+            box-shadow: var(--shadow);
+        }
+
+        h1 {
+            margin-top: 12px;
+            font-size: 1.6em;
+            color: var(--deep-pink);
+            font-weight: 600;
+        }
+
+        .sub {
+            font-size: 0.9em;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        main {
+            padding: 25px;
+        }
+
+        .upload-box {
+            border: 2px dashed var(--deep-pink);
+            border-radius: var(--radius);
+            padding: 50px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upload-box:hover {
+            background: var(--pink);
+            border-color: white;
+        }
+
+        .upload-box i {
+            font-size: 3em;
+            color: var(--deep-pink);
+        }
+
+        .upload-box p {
+            margin-top: 10px;
+            color: var(--text);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-item,
+        .res-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            margin: 10px 0;
+            background: #fff9fc;
+            border-left: 4px solid var(--deep-pink);
+            border-radius: 10px;
+        }
+
+        .res-item.success {
+            border-left-color: #58d68d;
+        }
+
+        .res-item.error {
+            border-left-color: #ff6b6b;
+        }
+
+        .name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .size {
+            font-size: 0.8em;
+            color: #999;
+        }
+
+        .amount {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #58d68d;
+        }
+
+        .error-msg {
+            color: #ff6b6b;
+            font-weight: 500;
+        }
+
+        .btn {
+            background: var(--deep-pink);
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.95em;
+            box-shadow: var(--shadow);
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(255, 133, 162, 0.25);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            flex: 1;
+            background: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--deep-pink);
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        .file-list,
+        .res-list {
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .file-list::-webkit-scrollbar,
+        .res-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb,
+        .res-list::-webkit-scrollbar-thumb {
+            background: var(--deep-pink);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <header>
+            <img src="{{ url_for('static', filename='icon.jpg') }}" alt="喵图标" class="cat">
+            <h1>发票改名器</h1>
+            <p class="sub">上传PDF，喵一声就能改好文件名啦😊</p>
+        </header>
+
+        <main>
+            <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>点击 / 拖拽 PDF 到这里</p>
+            </div>
+            <input type="file" id="fileInput" multiple accept=".pdf" onchange="handleSelect()" />
+
+            <div class="file-list" id="fileList"></div>
+
+            <div class="actions">
+                <button class="btn" id="goBtn" onclick="uploadFiles()" disabled>开始处理</button>
+                <button class="btn" onclick="clearAll()">清空</button>
+            </div>
+
+            <!-- 结果区 -->
+            <div id="resArea" style="display:none;">
+                <div class="stat-row">
+                    <div class="stat">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">总文件</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="statOk">0</div>
+                        <div class="stat-label">成功</div>
+                    </div>
+                </div>
+                <div class="res-list" id="resList"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const goBtn = document.getElementById('goBtn');
+        const resArea = document.getElementById('resArea');
+        const statTotal = document.getElementById('statTotal');
+        const statOk = document.getElementById('statOk');
+        const resList = document.getElementById('resList');
+        let files = [];
+
+        function handleSelect() {
+            files = Array.from(fileInput.files);
+            fileList.innerHTML = '';
+            files.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+          <div>
+            <div class="name">${f.name}</div>
+            <div class="size">${(f.size / 1024 / 1024).toFixed(2)} MB</div>
+          </div>`;
+                fileList.appendChild(div);
+            });
+            goBtn.disabled = !files.length;
+        }
+
+        async function uploadFiles() {
+            const fd = new FormData();
+            files.forEach(f => fd.append('files', f));
+            goBtn.disabled = true;
+            goBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中';
+            const res = await fetch('/upload', { method: 'POST', body: fd }).then(r => r.json());
+            showRes(res);
+            goBtn.disabled = false;
+            goBtn.innerHTML = '开始处理';
+        }
+
+        function showRes(data) {
+            resArea.style.display = 'block';
+            statTotal.textContent = data.total_files;
+            statOk.textContent = data.processed_files;
+            resList.innerHTML = '';
+            data.results.forEach(r => {
+                const div = document.createElement('div');
+                div.className = `res-item ${r.success ? 'success' : 'error'}`;
+                div.innerHTML = `
+          <div>
+            <div class="name">${r.original_filename}</div>
+            ${r.success ? `<div class="amount">¥${parseFloat(r.amount || 0).toFixed(2)}</div>` : `<div class="error-msg">${r.error}</div>`}
+          </div>
+          ${r.success ? `<a href="/download/${r.new_filename}" class="btn">下载</a>` : ''}`;
+                resList.appendChild(div);
+            });
+            resArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearAll() {
+            if (confirm('确定要清空所有文件吗？')) {
+                fetch('/clear-files', { method: 'POST' }).then(r => r.json()).then(d => alert(d.message || '已清空'));
+            }
+        }
+
+        // 拖拽
+        const ub = document.querySelector('.upload-box');
+        ['dragover', 'dragleave', 'drop'].forEach(evt => ub.addEventListener(evt, e => e.preventDefault()));
+        ['dragover', 'dragleave'].forEach(evt => ub.addEventListener(evt, e => ub.classList.toggle('hover', evt === 'dragover')));
+        ub.addEventListener('drop', e => {
+            fileInput.files = e.dataTransfer.files;
+            handleSelect();
+        });
+    </script>
+</body>
+
+</html>
