@@ -443,8 +443,16 @@
             goBtn.disabled = files.length === 0;
         }
 
-        function setFiles(fileListLike) {
-            files = Array.from(fileListLike).filter((file) => file.name.toLowerCase().endsWith('.pdf'));
+        function fileKey(file) {
+            return `${file.name}-${file.size}-${file.lastModified}`;
+        }
+
+        function addFiles(fileListLike) {
+            const existingKeys = new Set(files.map(fileKey));
+            const newFiles = Array.from(fileListLike)
+                .filter((file) => file.name.toLowerCase().endsWith('.pdf'))
+                .filter((file) => !existingKeys.has(fileKey(file)));
+            files = [...files, ...newFiles];
             renderSelectedFiles();
         }
 
@@ -521,7 +529,10 @@
                 fileInput.click();
             }
         });
-        fileInput.addEventListener('change', () => setFiles(fileInput.files));
+        fileInput.addEventListener('change', () => {
+            addFiles(fileInput.files);
+            fileInput.value = '';
+        });
         goBtn.addEventListener('click', uploadFiles);
         clearBtn.addEventListener('click', clearAll);
         downloadAllBtn.addEventListener('click', () => {
@@ -535,7 +546,7 @@
         uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('hover'));
         uploadBox.addEventListener('drop', (event) => {
             uploadBox.classList.remove('hover');
-            setFiles(event.dataTransfer.files);
+            addFiles(event.dataTransfer.files);
         });
     </script>
 </body>
