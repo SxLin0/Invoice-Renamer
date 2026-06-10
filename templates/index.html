@@ -416,6 +416,7 @@
         const emptyState = document.getElementById('emptyState');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         let files = [];
+        let processedResults = [];
 
         function formatSize(bytes) {
             return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
@@ -462,13 +463,17 @@
         }
 
         function showResults(data) {
-            statTotal.textContent = data.total_files || 0;
-            statOk.textContent = data.processed_files || 0;
-            statTotalAmount.textContent = `¥${parseFloat(data.total_amount || 0).toFixed(2)}`;
-            resList.innerHTML = '';
-            emptyState.style.display = data.results?.length ? 'none' : 'grid';
+            processedResults.push(...(data.results || []));
+            const successResults = processedResults.filter((result) => result.success);
+            const totalAmount = successResults.reduce((sum, result) => sum + parseFloat(result.amount || 0), 0);
 
-            (data.results || []).forEach((result) => {
+            statTotal.textContent = processedResults.length;
+            statOk.textContent = successResults.length;
+            statTotalAmount.textContent = `¥${totalAmount.toFixed(2)}`;
+            resList.innerHTML = '';
+            emptyState.style.display = processedResults.length ? 'none' : 'grid';
+
+            processedResults.forEach((result) => {
                 const item = document.createElement('div');
                 item.className = `res-item ${result.success ? 'success' : 'error'}`;
 
@@ -501,6 +506,7 @@
                 .then((response) => response.json())
                 .then((data) => {
                     files = [];
+                    processedResults = [];
                     fileInput.value = '';
                     renderSelectedFiles();
                     showResults({ total_files: 0, processed_files: 0, total_amount: 0, results: [] });
