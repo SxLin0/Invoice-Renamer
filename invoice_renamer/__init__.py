@@ -1,0 +1,1 @@
+"""Invoice Renamer core package."""
