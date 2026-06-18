@@ -366,7 +366,7 @@
                     <div class="file-list" id="fileList"></div>
                     <div class="actions">
                         <button class="btn" id="goBtn" disabled>开始处理</button>
-                        <button class="btn secondary" id="clearBtn">清空</button>
+	                        <button class="btn secondary" id="clearBtn">清空列表</button>
                     </div>
                 </div>
             </section>
@@ -375,7 +375,7 @@
                 <div class="panel-header">
                     <div>
                         <h2 class="panel-title">处理结果</h2>
-                        <p class="panel-note">完成后可单个下载，也可打包下载。</p>
+                        <p class="panel-note" id="resultNote">完成后可单个下载，也可打包下载。</p>
                     </div>
                 </div>
                 <div class="panel-body">
@@ -396,6 +396,8 @@
                     <div class="empty-state" id="emptyState">等待上传文件</div>
                     <div class="res-list" id="resList"></div>
                     <div class="actions">
+                        <button class="btn secondary" id="chooseOutputBtn" hidden>选择输出文件夹</button>
+                        <button class="btn" id="openOutputBtn" hidden>打开输出文件夹</button>
                         <button class="btn secondary" id="downloadAllBtn">打包下载</button>
                     </div>
                 </div>
@@ -415,8 +417,38 @@
         const resList = document.getElementById('resList');
         const emptyState = document.getElementById('emptyState');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const chooseOutputBtn = document.getElementById('chooseOutputBtn');
+        const openOutputBtn = document.getElementById('openOutputBtn');
+        const resultNote = document.getElementById('resultNote');
         let files = [];
         let processedResults = [];
+        let desktopMode = false;
+        let outputFolder = '';
+
+        async function loadAppInfo() {
+            const response = await fetch('/app-info');
+            const info = await response.json();
+            desktopMode = Boolean(info.desktop);
+            outputFolder = info.output_folder || '';
+            chooseOutputBtn.hidden = !desktopMode;
+            openOutputBtn.hidden = !desktopMode;
+            downloadAllBtn.hidden = desktopMode;
+            resultNote.textContent = desktopMode
+                ? `处理后的文件会直接保存到：${outputFolder || '未选择'}`
+                : '完成后可单个下载，也可打包下载。';
+        }
+
+        async function chooseOutputFolder() {
+            if (!window.pywebview || !window.pywebview.api) {
+                return false;
+            }
+            const result = await window.pywebview.api.select_output_folder();
+            if (result && result.output_folder) {
+                outputFolder = result.output_folder;
+                resultNote.textContent = `处理后的文件会直接保存到：${outputFolder}`;
+            }
+            return Boolean(result && result.selected);
+        }
 
         function formatSize(bytes) {
             return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
@@ -457,6 +489,13 @@
         }
 
         async function uploadFiles() {
+            if (desktopMode && !outputFolder) {
+                const selected = await chooseOutputFolder();
+                if (!selected) {
+                    alert('请先选择输出文件夹');
+                    return;
+                }
+            }
             const formData = new FormData();
             files.forEach((file) => formData.append('files', file));
             goBtn.disabled = true;
@@ -495,7 +534,7 @@
                 }
                 item.appendChild(details);
 
-                if (result.success) {
+                if (result.success && !desktopMode) {
                     const link = document.createElement('a');
                     link.className = 'btn';
                     link.href = `/download/${encodeURIComponent(result.new_filename)}`;
@@ -506,20 +545,12 @@
             });
         }
 
-        function clearAll() {
-            if (!confirm('确定要清空所有文件吗？')) {
-                return;
-            }
-            fetch('/clear-files', { method: 'POST' })
-                .then((response) => response.json())
-                .then((data) => {
-                    files = [];
-                    processedResults = [];
-                    fileInput.value = '';
-                    renderSelectedFiles();
-                    showResults({ total_files: 0, processed_files: 0, total_amount: 0, results: [] });
-                    alert(data.message || '已清空');
-                });
+        function clearCurrentList() {
+            files = [];
+            processedResults = [];
+            fileInput.value = '';
+            renderSelectedFiles();
+            showResults({ total_files: 0, processed_files: 0, total_amount: 0, results: [] });
         }
 
         uploadBox.addEventListener('click', () => fileInput.click());
@@ -534,9 +565,17 @@
             fileInput.value = '';
         });
         goBtn.addEventListener('click', uploadFiles);
-        clearBtn.addEventListener('click', clearAll);
+        clearBtn.addEventListener('click', clearCurrentList);
+        chooseOutputBtn.addEventListener('click', chooseOutputFolder);
         downloadAllBtn.addEventListener('click', () => {
             window.location.href = '/download-all';
+        });
+        openOutputBtn.addEventListener('click', async () => {
+            const response = await fetch('/open-output-folder', { method: 'POST' });
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.error || '打开输出文件夹失败');
+            }
         });
 
         ['dragover', 'dragleave', 'drop'].forEach((eventName) => {
@@ -548,6 +587,7 @@
             uploadBox.classList.remove('hover');
             addFiles(event.dataTransfer.files);
         });
+        loadAppInfo();
     </script>
 </body>
 
