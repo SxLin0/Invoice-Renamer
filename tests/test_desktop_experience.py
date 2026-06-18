@@ -111,3 +111,10 @@ def test_desktop_build_workflow_creates_installer_and_dmg():
     assert "ISCC" in workflow
     assert "InvoiceRenamer-macos.dmg" in workflow
     assert "hdiutil create" in dmg_script
+
+
+def test_windows_installer_uses_only_inno_setup_builtin_language_files():
+    script = Path("installer/windows/InvoiceRenamer.iss").read_text(encoding="utf-8")
+
+    assert "ChineseSimplified.isl" not in script
+    assert 'MessagesFile: "compiler:Default.isl"' in script
