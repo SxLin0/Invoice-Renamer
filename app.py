@@ -70,6 +70,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/health")
+def health():
+    return jsonify({"ok": True})
+
+
 @app.route("/app-info")
 def app_info():
     desktop_mode = bool(app.config.get("DESKTOP_MODE", False))

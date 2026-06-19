@@ -55,7 +55,22 @@ def test_desktop_server_waits_until_ready_before_window_loads():
     source = Path("desktop_app.py").read_text(encoding="utf-8")
 
     assert "self.wait_until_ready()" in source
-    assert "socket.create_connection" in source
+    assert "/health" in source
+    assert "urllib.request.urlopen" in source
+
+
+def test_desktop_server_handles_requests_in_threads():
+    source = Path("desktop_app.py").read_text(encoding="utf-8")
+
+    assert 'make_server("127.0.0.1", port, app, threaded=True)' in source
+
+
+def test_desktop_main_uses_single_instance_guard():
+    source = Path("desktop_app.py").read_text(encoding="utf-8")
+
+    assert "SingleInstance(\"InvoiceRenamerDesktop\")" in source
+    assert "Another desktop app instance is already running" in source
+    assert "show_already_running_message()" in source
 
 
 def test_pyinstaller_includes_tkinter_for_windows_folder_dialog():
