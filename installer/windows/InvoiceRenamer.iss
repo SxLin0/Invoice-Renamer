@@ -8,7 +8,7 @@
 AppId={{5D5B4CF4-5A20-48B1-8FA5-B4838334F86BA}
 AppName={#AppName}
 AppVersion={#AppVersion}
-DefaultDirName={localappdata}\Programs\曹姐发票改名器
+DefaultDirName={localappdata}\Programs\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 OutputDir=..\..\dist\installer

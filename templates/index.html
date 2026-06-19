@@ -8,39 +8,32 @@
     <link rel="icon" href="{{ url_for('static', filename='icon.jpg') }}" type="image/jpeg">
     <style>
         :root {
-            --bg: #f4f1ec;
-            --panel: #fffdf9;
-            --panel-soft: #faf6ef;
-            --line: #e5d9c8;
-            --text: #22211f;
-            --muted: #6f6962;
+            --bg: #f6f7f7;
+            --panel: #ffffff;
+            --panel-soft: #f3f6f6;
+            --line: #d9e0df;
+            --text: #1f2424;
+            --muted: #687272;
             --accent: #0f766e;
             --accent-dark: #115e59;
             --warn: #b42318;
             --ok: #15803d;
-            --shadow: 0 18px 45px rgba(42, 35, 28, 0.12);
+            --shadow: 0 16px 38px rgba(22, 34, 33, 0.10);
             --radius: 8px;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
             min-height: 100vh;
             color: var(--text);
-            background:
-                linear-gradient(135deg, rgba(15, 118, 110, 0.10), transparent 42%),
-                var(--bg);
+            background: var(--bg);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
             letter-spacing: 0;
         }
 
-        button,
-        input {
-            font: inherit;
-        }
+        button, input { font: inherit; }
 
         .shell {
             width: min(1120px, calc(100% - 32px));
@@ -69,7 +62,7 @@
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #fff;
-            box-shadow: 0 8px 20px rgba(42, 35, 28, 0.14);
+            box-shadow: 0 8px 20px rgba(22, 34, 33, 0.12);
         }
 
         h1 {
@@ -92,8 +85,8 @@
         }
 
         .panel {
-            background: rgba(255, 253, 249, 0.92);
-            border: 1px solid rgba(229, 217, 200, 0.92);
+            background: var(--panel);
+            border: 1px solid var(--line);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             overflow: hidden;
@@ -106,7 +99,7 @@
             gap: 16px;
             padding: 18px 20px;
             border-bottom: 1px solid var(--line);
-            background: rgba(250, 246, 239, 0.72);
+            background: var(--panel-soft);
         }
 
         .panel-title {
@@ -119,11 +112,10 @@
             margin: 4px 0 0;
             color: var(--muted);
             font-size: 13px;
+            overflow-wrap: anywhere;
         }
 
-        .panel-body {
-            padding: 20px;
-        }
+        .panel-body { padding: 20px; }
 
         .upload-box {
             display: grid;
@@ -131,17 +123,16 @@
             min-height: 270px;
             padding: 28px;
             text-align: center;
-            border: 1.5px dashed #9ca38f;
+            border: 1.5px dashed #98a6a4;
             border-radius: var(--radius);
-            background: linear-gradient(180deg, #fffdf9, #f7f2e9);
+            background: #fbfdfd;
             cursor: pointer;
             transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
         }
 
-        .upload-box:hover,
-        .upload-box.hover {
+        .upload-box:hover, .upload-box.hover {
             border-color: var(--accent);
-            background: linear-gradient(180deg, #ffffff, #eef8f6);
+            background: #eef8f6;
             transform: translateY(-1px);
         }
 
@@ -170,12 +161,9 @@
             font-size: 14px;
         }
 
-        input[type="file"] {
-            display: none;
-        }
+        input[type="file"] { display: none; }
 
-        .file-list,
-        .res-list {
+        .file-list, .res-list {
             display: grid;
             gap: 10px;
             max-height: 300px;
@@ -184,8 +172,7 @@
             padding-right: 4px;
         }
 
-        .file-item,
-        .res-item {
+        .file-item, .res-item {
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
             gap: 14px;
@@ -196,13 +183,8 @@
             background: var(--panel);
         }
 
-        .res-item.success {
-            border-left: 4px solid var(--ok);
-        }
-
-        .res-item.error {
-            border-left: 4px solid var(--warn);
-        }
+        .res-item.success { border-left: 4px solid var(--ok); }
+        .res-item.error { border-left: 4px solid var(--warn); }
 
         .name {
             min-width: 0;
@@ -210,11 +192,11 @@
             font-weight: 650;
         }
 
-        .meta,
-        .size {
+        .meta, .size {
             margin-top: 4px;
             color: var(--muted);
             font-size: 13px;
+            overflow-wrap: anywhere;
         }
 
         .amount {
@@ -243,9 +225,7 @@
             margin-top: 14px;
         }
 
-        .output-path-row.visible {
-            display: grid;
-        }
+        .output-path-row.visible { display: grid; }
 
         .output-path-row input {
             min-width: 0;
@@ -286,9 +266,7 @@
             background: #fff;
         }
 
-        .btn.secondary:hover {
-            background: var(--panel-soft);
-        }
+        .btn.secondary:hover { background: var(--panel-soft); }
 
         .stats {
             display: grid;
@@ -334,22 +312,11 @@
                 padding: 20px 0;
             }
 
-            .topbar,
-            .workspace {
-                display: block;
-            }
-
-            .panel {
-                margin-top: 14px;
-            }
-
-            .stats {
-                grid-template-columns: 1fr;
-            }
-
-            h1 {
-                font-size: 22px;
-            }
+            .topbar, .workspace { display: block; }
+            .panel { margin-top: 14px; }
+            .stats { grid-template-columns: 1fr; }
+            h1 { font-size: 22px; }
+            .output-path-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -386,7 +353,7 @@
                     <div class="file-list" id="fileList"></div>
                     <div class="actions">
                         <button class="btn" id="goBtn" disabled>开始处理</button>
-	                        <button class="btn secondary" id="clearBtn">清空列表</button>
+                        <button class="btn secondary" id="clearBtn">清空列表</button>
                     </div>
                 </div>
             </section>
@@ -416,7 +383,7 @@
                     <div class="empty-state" id="emptyState">等待上传文件</div>
                     <div class="res-list" id="resList"></div>
                     <div class="output-path-row" id="manualOutputRow">
-                        <input id="manualOutputPath" type="text" placeholder="也可以粘贴输出文件夹路径">
+                        <input id="manualOutputPath" type="text" placeholder="也可以粘贴输出文件夹路径，例如 %USERPROFILE%\Desktop">
                         <button class="btn secondary" id="saveOutputPathBtn">保存路径</button>
                     </div>
                     <div class="actions">
@@ -452,6 +419,12 @@
         let desktopMode = false;
         let outputFolder = '';
 
+        function updateOutputNote() {
+            resultNote.textContent = desktopMode
+                ? `处理后的文件会直接保存到：${outputFolder || '未选择'}`
+                : '完成后可单个下载，也可打包下载。';
+        }
+
         async function loadAppInfo() {
             const response = await fetch('/app-info');
             const info = await response.json();
@@ -462,16 +435,7 @@
             downloadAllBtn.hidden = desktopMode;
             manualOutputRow.classList.toggle('visible', desktopMode);
             manualOutputPath.value = outputFolder;
-            resultNote.textContent = desktopMode
-                ? `处理后的文件会直接保存到：${outputFolder || '未选择'}`
-                : '完成后可单个下载，也可打包下载。';
-        }
-
-        function withTimeout(promise, milliseconds) {
-            return Promise.race([
-                promise,
-                new Promise((resolve) => setTimeout(() => resolve({ timedOut: true }), milliseconds)),
-            ]);
+            updateOutputNote();
         }
 
         async function setOutputFolderFromInput() {
@@ -492,7 +456,7 @@
             }
             outputFolder = data.output_folder;
             manualOutputPath.value = outputFolder;
-            resultNote.textContent = `处理后的文件会直接保存到：${outputFolder}`;
+            updateOutputNote();
             return true;
         }
 
@@ -500,17 +464,21 @@
             if (!window.pywebview || !window.pywebview.api) {
                 return false;
             }
-            const result = await withTimeout(window.pywebview.api.select_output_folder(), 3000);
-            if (result && result.timedOut) {
-                alert('系统文件夹选择窗口没有响应，可以直接粘贴输出文件夹路径。');
+            chooseOutputBtn.disabled = true;
+            try {
+                const result = await window.pywebview.api.select_output_folder();
+                if (result && result.output_folder) {
+                    outputFolder = result.output_folder;
+                    manualOutputPath.value = outputFolder;
+                    updateOutputNote();
+                }
+                return Boolean(result && result.selected);
+            } catch (error) {
+                alert(`选择输出文件夹失败：${error}`);
                 return false;
+            } finally {
+                chooseOutputBtn.disabled = false;
             }
-            if (result && result.output_folder) {
-                outputFolder = result.output_folder;
-                manualOutputPath.value = outputFolder;
-                resultNote.textContent = `处理后的文件会直接保存到：${outputFolder}`;
-            }
-            return Boolean(result && result.selected);
         }
 
         function formatSize(bytes) {

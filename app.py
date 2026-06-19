@@ -7,7 +7,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, jsonify, render_template, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 
 from invoice_renamer.extractor import extract_amount
@@ -15,6 +15,7 @@ from invoice_renamer.processor import process_pdf_file
 from invoice_renamer.runtime import (
     configure_tesseract,
     default_output_dir,
+    ensure_writable_dir,
     ensure_work_folders,
     open_folder,
     resource_path,
@@ -48,14 +49,20 @@ def temporary_upload_name(original_filename: str) -> str:
 
 
 def set_output_folder(folder: str | Path) -> str:
-    output_dir = Path(folder).expanduser()
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = ensure_writable_dir(folder)
     app.config["PROCESSED_FOLDER"] = str(output_dir)
     app.config["OUTPUT_FOLDER_SELECTED"] = True
     return str(output_dir)
 
 
-configure_runtime()
+def ensure_runtime_configured() -> None:
+    if "UPLOAD_FOLDER" not in app.config or "PROCESSED_FOLDER" not in app.config:
+        configure_runtime()
+
+
+@app.before_request
+def configure_runtime_before_request() -> None:
+    ensure_runtime_configured()
 
 
 @app.route("/")
@@ -95,7 +102,7 @@ def set_output_folder_route():
             }
         )
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": str(exc)}), 400
 
 
 @app.route("/upload", methods=["POST"])
@@ -159,26 +166,29 @@ def upload_files():
 def reject_non_pdf(original_filename: str) -> dict:
     return {
         "success": False,
-        "error": "仅支持PDF文件，未保存",
+        "error": "仅支持 PDF 文件，未保存",
         "original_filename": original_filename,
     }
 
 
-@app.route("/download/<filename>")
+@app.route("/download/<path:filename>")
 def download_file(filename):
     try:
-        file_path = os.path.join(app.config["PROCESSED_FOLDER"], filename)
-        if os.path.exists(file_path):
-            return send_file(file_path, as_attachment=True, download_name=filename)
+        return send_from_directory(
+            app.config["PROCESSED_FOLDER"],
+            filename,
+            as_attachment=True,
+            download_name=Path(filename).name,
+        )
+    except Exception:
         return jsonify({"error": "文件不存在"}), 404
-    except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/processed-files")
 def list_processed_files():
     try:
         files = []
+        os.makedirs(app.config["PROCESSED_FOLDER"], exist_ok=True)
         for filename in os.listdir(app.config["PROCESSED_FOLDER"]):
             if not filename.lower().endswith(".pdf"):
                 continue
@@ -204,11 +214,11 @@ def open_output_folder():
     try:
         if app.config.get("DESKTOP_MODE") and not app.config.get("OUTPUT_FOLDER_SELECTED"):
             return jsonify({"error": "请先选择输出文件夹"}), 400
-        os.makedirs(app.config["PROCESSED_FOLDER"], exist_ok=True)
-        open_folder(app.config["PROCESSED_FOLDER"])
+        output_dir = ensure_writable_dir(app.config["PROCESSED_FOLDER"])
+        open_folder(output_dir)
         return jsonify({"message": "已打开输出文件夹"})
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": str(exc)}), 400
 
 
 @app.route("/download-all")
@@ -229,7 +239,8 @@ def download_all():
 
 
 if __name__ == "__main__":
-    print("PDF重命名工具启动成功")
+    configure_runtime()
+    print("PDF 重命名工具启动成功")
     print(f"数据目录: {Path(app.config['UPLOAD_FOLDER']).parent}")
     print("访问地址: http://127.0.0.1:5000")
     app.run(debug=True)

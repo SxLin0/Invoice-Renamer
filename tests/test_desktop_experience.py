@@ -1,5 +1,5 @@
-from pathlib import Path
 from io import BytesIO
+from pathlib import Path
 
 
 def test_open_output_folder_endpoint_uses_processed_folder(monkeypatch, tmp_path):
@@ -47,6 +47,24 @@ def test_set_output_folder_endpoint_updates_processed_folder(monkeypatch, tmp_pa
         "output_folder": str(output_dir),
     }
     assert Path(app.app.config["PROCESSED_FOLDER"]) == output_dir
+
+
+def test_set_output_folder_endpoint_expands_windows_style_env_vars(monkeypatch, tmp_path):
+    import app
+
+    monkeypatch.setenv("INVOICE_TEST_DESKTOP", str(tmp_path))
+    monkeypatch.setenv("INVOICE_RENAMER_DATA_DIR", str(tmp_path / "data"))
+    app.configure_runtime(desktop=True)
+
+    client = app.app.test_client()
+    response = client.post(
+        "/set-output-folder",
+        json={"path": r"%INVOICE_TEST_DESKTOP%\Desktop"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["output_folder"] == str(tmp_path / "Desktop")
+    assert (tmp_path / "Desktop").is_dir()
 
 
 def test_upload_uses_temporary_source_file_and_removes_it(monkeypatch, tmp_path):
@@ -99,7 +117,7 @@ def test_non_pdf_inputs_are_rejected_without_saving(monkeypatch, tmp_path):
     result = response.get_json()["results"][0]
     assert response.status_code == 200
     assert result["success"] is False
-    assert result["error"] == "仅支持PDF文件，未保存"
+    assert result["error"] == "仅支持 PDF 文件，未保存"
     assert "new_filename" not in result
     assert list((tmp_path / "processed").iterdir()) == []
 
@@ -107,14 +125,14 @@ def test_non_pdf_inputs_are_rejected_without_saving(monkeypatch, tmp_path):
 def test_frontend_has_desktop_output_folder_controls():
     template = Path("templates/index.html").read_text(encoding="utf-8")
 
-    assert "id=\"chooseOutputBtn\"" in template
-    assert "id=\"openOutputBtn\"" in template
+    assert 'id="chooseOutputBtn"' in template
+    assert 'id="openOutputBtn"' in template
     assert "选择输出文件夹" in template
     assert "打开输出文件夹" in template
     assert "window.pywebview.api.select_output_folder" in template
-    assert "id=\"manualOutputPath\"" in template
+    assert 'id="manualOutputPath"' in template
     assert "setOutputFolderFromInput" in template
-    assert "withTimeout(" in template
+    assert "withTimeout(" not in template
     assert "fetch('/app-info')" in template
     assert "fetch('/set-output-folder'" in template
     assert "fetch('/open-output-folder', { method: 'POST' })" in template

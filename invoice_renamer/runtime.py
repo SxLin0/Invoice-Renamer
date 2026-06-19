@@ -1,6 +1,8 @@
 import os
+import re
 import subprocess
 import sys
+import tempfile
 import traceback
 from pathlib import Path
 
@@ -8,6 +10,7 @@ import pytesseract
 
 
 APP_NAME = "曹姐发票改名器"
+WINDOWS_DESKTOP_FOLDER_ID = "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}"
 
 
 def is_frozen() -> bool:
@@ -37,6 +40,55 @@ def user_data_dir() -> Path:
     return home / ".local" / "share" / APP_NAME
 
 
+def windows_known_folder_path(folder_id: str) -> Path | None:
+    if sys.platform != "win32":
+        return None
+
+    try:
+        import ctypes
+        import uuid
+        from ctypes import wintypes
+
+        class GUID(ctypes.Structure):
+            _fields_ = [
+                ("Data1", wintypes.DWORD),
+                ("Data2", wintypes.WORD),
+                ("Data3", wintypes.WORD),
+                ("Data4", ctypes.c_ubyte * 8),
+            ]
+
+            def __init__(self, value: str):
+                guid = uuid.UUID(value)
+                data4 = (ctypes.c_ubyte * 8).from_buffer_copy(guid.bytes[8:])
+                super().__init__(guid.time_low, guid.time_mid, guid.time_hi_version, data4)
+
+        path_ptr = ctypes.c_wchar_p()
+        result = ctypes.windll.shell32.SHGetKnownFolderPath(
+            ctypes.byref(GUID(folder_id)),
+            0,
+            None,
+            ctypes.byref(path_ptr),
+        )
+        if result != 0 or not path_ptr.value:
+            return None
+        try:
+            return Path(path_ptr.value)
+        finally:
+            ctypes.windll.ole32.CoTaskMemFree(path_ptr)
+    except Exception:
+        return None
+
+
+def desktop_dir() -> Path:
+    if sys.platform == "win32":
+        known_desktop = windows_known_folder_path(WINDOWS_DESKTOP_FOLDER_ID)
+        if known_desktop is not None:
+            return known_desktop
+        if user_profile := os.environ.get("USERPROFILE"):
+            return Path(user_profile) / "Desktop"
+    return Path.home() / "Desktop"
+
+
 def ensure_work_folders(base_dir: Path | None = None) -> tuple[Path, Path]:
     root = base_dir or user_data_dir()
     upload_dir = root / "uploads"
@@ -47,9 +99,50 @@ def ensure_work_folders(base_dir: Path | None = None) -> tuple[Path, Path]:
 
 
 def default_output_dir(base_dir: Path | None = None) -> Path:
-    root = base_dir or user_data_dir()
-    output_dir = root / "Output"
+    if base_dir is not None or os.environ.get("INVOICE_RENAMER_DATA_DIR"):
+        output_dir = (base_dir or user_data_dir()) / "Output"
+    elif sys.platform == "win32":
+        output_dir = desktop_dir() / APP_NAME
+    else:
+        output_dir = user_data_dir() / "Output"
     output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
+def normalize_output_dir(folder: str | Path) -> Path:
+    raw_folder = os.fspath(folder).strip().strip('"')
+    raw_folder = re.sub(
+        r"%([^%]+)%",
+        lambda match: os.environ.get(match.group(1), match.group(0)),
+        raw_folder,
+    )
+    expanded = os.path.expandvars(raw_folder)
+    if not expanded:
+        raise ValueError("请选择输出文件夹")
+
+    output_dir = Path(expanded).expanduser()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if not output_dir.is_dir():
+        raise NotADirectoryError(f"{output_dir} 不是文件夹")
+
+    try:
+        return output_dir.resolve(strict=False)
+    except OSError:
+        return output_dir.absolute()
+
+
+def ensure_writable_dir(folder: str | Path) -> Path:
+    output_dir = normalize_output_dir(folder)
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=".invoice-renamer-",
+            suffix=".tmp",
+            dir=output_dir,
+            delete=True,
+        ):
+            pass
+    except OSError as exc:
+        raise PermissionError(f"输出文件夹不可写：{output_dir}") from exc
     return output_dir
 
 
@@ -109,7 +202,7 @@ def configure_tesseract(root: Path | None = None) -> bool:
 def open_folder(path: str | Path) -> None:
     folder = Path(path)
     if sys.platform == "win32":
-        os.startfile(folder)  # type: ignore[attr-defined]
+        os.startfile(str(folder))  # type: ignore[attr-defined]
     elif sys.platform == "darwin":
         subprocess.Popen(["open", str(folder)])
     else:

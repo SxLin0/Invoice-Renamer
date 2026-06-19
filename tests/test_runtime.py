@@ -2,21 +2,20 @@ import os
 import sys
 from pathlib import Path
 
-import pytest
-
 
 def test_user_data_dir_uses_platform_app_location(monkeypatch, tmp_path):
+    monkeypatch.delenv("INVOICE_RENAMER_DATA_DIR", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-    from invoice_renamer.runtime import user_data_dir
+    from invoice_renamer.runtime import APP_NAME, user_data_dir
 
     if sys.platform == "darwin":
-        expected = tmp_path / "Library" / "Application Support" / "曹姐发票改名器"
+        expected = tmp_path / "Library" / "Application Support" / APP_NAME
     elif sys.platform == "win32":
         monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "LocalAppData"))
-        expected = tmp_path / "LocalAppData" / "曹姐发票改名器"
+        expected = tmp_path / "LocalAppData" / APP_NAME
     else:
-        expected = tmp_path / ".local" / "share" / "曹姐发票改名器"
+        expected = tmp_path / ".local" / "share" / APP_NAME
 
     assert user_data_dir() == expected
 
@@ -82,3 +81,18 @@ def test_desktop_log_path_is_under_user_data_dir(monkeypatch, tmp_path):
     from invoice_renamer.runtime import desktop_log_path
 
     assert desktop_log_path() == tmp_path / "logs" / "desktop.log"
+
+
+def test_normalize_output_dir_expands_environment_variables(monkeypatch, tmp_path):
+    monkeypatch.setenv("INVOICE_TEST_OUTPUT", str(tmp_path))
+
+    from invoice_renamer.runtime import normalize_output_dir
+
+    assert normalize_output_dir(r"%INVOICE_TEST_OUTPUT%\Desktop") == tmp_path / "Desktop"
+    assert (tmp_path / "Desktop").is_dir()
+
+
+def test_ensure_writable_dir_returns_existing_writable_folder(tmp_path):
+    from invoice_renamer.runtime import ensure_writable_dir
+
+    assert ensure_writable_dir(tmp_path) == tmp_path

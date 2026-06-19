@@ -41,7 +41,7 @@ def process_pdf_file(file_path: str, original_filename: str, processed_folder: s
                     "amount": float(amount),
                     "new_filename": new_filename,
                     "original_filename": original_filename,
-                    "message": "文件名金额已核验",
+                    "message": "文件名金额已校验",
                 }
 
         if amount:

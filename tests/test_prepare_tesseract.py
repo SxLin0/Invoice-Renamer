@@ -23,7 +23,11 @@ def test_mac_dependencies_resolves_homebrew_rpath_dependencies(monkeypatch):
         raise AssertionError(command)
 
     monkeypatch.setattr(prepare_tesseract.subprocess, "check_output", fake_check_output)
-    monkeypatch.setattr(Path, "exists", lambda self: str(self).startswith("/opt/homebrew/lib/"))
+    monkeypatch.setattr(
+        Path,
+        "exists",
+        lambda self: self.as_posix().startswith("/opt/homebrew/lib/"),
+    )
 
     assert prepare_tesseract.mac_dependencies(binary) == [
         Path("/opt/homebrew/lib/libwebp.7.dylib"),
