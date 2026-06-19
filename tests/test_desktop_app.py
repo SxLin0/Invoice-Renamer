@@ -26,6 +26,14 @@ def test_desktop_api_select_output_folder_keeps_existing_folder_when_cancelled(t
     assert Path(app.app.config["PROCESSED_FOLDER"]) == tmp_path / "existing"
 
 
+def test_desktop_api_defaults_to_native_webview_folder_dialog():
+    from desktop_app import DesktopApi
+
+    api = DesktopApi()
+
+    assert api.folder_picker is None
+
+
 def test_folder_picker_initial_dir_falls_back_to_desktop(monkeypatch, tmp_path):
     from desktop_app import folder_picker_initial_dir
 
@@ -41,6 +49,13 @@ def test_desktop_start_uses_persistent_webview_storage():
 
     assert "private_mode=False" in source
     assert "storage_path=str(webview_storage_path())" in source
+
+
+def test_desktop_server_waits_until_ready_before_window_loads():
+    source = Path("desktop_app.py").read_text(encoding="utf-8")
+
+    assert "self.wait_until_ready()" in source
+    assert "socket.create_connection" in source
 
 
 def test_pyinstaller_includes_tkinter_for_windows_folder_dialog():

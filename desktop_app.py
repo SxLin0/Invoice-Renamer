@@ -1,6 +1,7 @@
 import socket
 import sys
 import threading
+import time
 from contextlib import closing
 from pathlib import Path
 from werkzeug.serving import make_server
@@ -23,15 +24,27 @@ def find_free_port() -> int:
 
 class FlaskServer:
     def __init__(self, port: int):
+        self.port = port
         self.server = make_server("127.0.0.1", port, app)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
     def start(self) -> None:
         self.thread.start()
+        self.wait_until_ready()
 
     def stop(self) -> None:
         self.server.shutdown()
         self.thread.join(timeout=3)
+
+    def wait_until_ready(self, timeout: float = 5.0) -> None:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                with closing(socket.create_connection(("127.0.0.1", self.port), timeout=0.2)):
+                    return
+            except OSError:
+                time.sleep(0.05)
+        raise TimeoutError("Local web server did not become ready in time")
 
 
 def folder_picker_initial_dir(initial_dir: str) -> str:
@@ -68,7 +81,7 @@ def select_folder_with_tk(initial_dir: str) -> str | None:
 class DesktopApi:
     def __init__(self, window=None, folder_picker=None):
         self.window = window
-        self.folder_picker = folder_picker or select_folder_with_tk
+        self.folder_picker = folder_picker
 
     def bind_window(self, window) -> None:
         self.window = window
@@ -87,10 +100,14 @@ class DesktopApi:
             return {"selected": True, "output_folder": output_folder}
 
         if self.window is None:
-            return {
-                "selected": False,
-                "output_folder": app.config["PROCESSED_FOLDER"],
-            }
+            selected_folder = select_folder_with_tk(app.config["PROCESSED_FOLDER"])
+            if not selected_folder:
+                return {
+                    "selected": False,
+                    "output_folder": app.config["PROCESSED_FOLDER"],
+                }
+            output_folder = set_output_folder(selected_folder)
+            return {"selected": True, "output_folder": output_folder}
 
         import webview
 
