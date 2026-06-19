@@ -111,12 +111,15 @@ def default_output_dir(base_dir: Path | None = None) -> Path:
 
 def normalize_output_dir(folder: str | Path) -> Path:
     raw_folder = os.fspath(folder).strip().strip('"')
+    has_windows_env_var = re.search(r"%[^%]+%", raw_folder) is not None
     raw_folder = re.sub(
         r"%([^%]+)%",
         lambda match: os.environ.get(match.group(1), match.group(0)),
         raw_folder,
     )
     expanded = os.path.expandvars(raw_folder)
+    if has_windows_env_var and sys.platform != "win32":
+        expanded = expanded.replace("\\", os.sep)
     if not expanded:
         raise ValueError("请选择输出文件夹")
 
