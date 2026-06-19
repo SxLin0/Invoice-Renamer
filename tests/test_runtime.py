@@ -74,3 +74,11 @@ def test_flask_app_uses_runtime_work_folders(monkeypatch, tmp_path):
 
     assert Path(app.app.config["UPLOAD_FOLDER"]) == tmp_path / "uploads"
     assert Path(app.app.config["PROCESSED_FOLDER"]) == tmp_path / "processed"
+
+
+def test_desktop_log_path_is_under_user_data_dir(monkeypatch, tmp_path):
+    monkeypatch.setenv("INVOICE_RENAMER_DATA_DIR", str(tmp_path))
+
+    from invoice_renamer.runtime import desktop_log_path
+
+    assert desktop_log_path() == tmp_path / "logs" / "desktop.log"

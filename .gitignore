@@ -6,5 +6,6 @@ uploads/
 processed/
 .pytest_cache/
 build/
+build-assets/
 dist/
 runtime/

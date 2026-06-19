@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 
 import pytesseract
@@ -43,6 +44,23 @@ def ensure_work_folders(base_dir: Path | None = None) -> tuple[Path, Path]:
     upload_dir.mkdir(parents=True, exist_ok=True)
     processed_dir.mkdir(parents=True, exist_ok=True)
     return upload_dir, processed_dir
+
+
+def desktop_log_path() -> Path:
+    return user_data_dir() / "logs" / "desktop.log"
+
+
+def write_desktop_log(message: str) -> Path:
+    path = desktop_log_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as log_file:
+        log_file.write(message.rstrip())
+        log_file.write("\n")
+    return path
+
+
+def write_exception_log(exc: BaseException) -> Path:
+    return write_desktop_log("".join(traceback.format_exception(exc)))
 
 
 def bundled_tesseract_binary(root: Path | None = None) -> Path:

@@ -1,4 +1,5 @@
 import socket
+import sys
 import threading
 from contextlib import closing
 
@@ -6,6 +7,7 @@ import webview
 from werkzeug.serving import make_server
 
 from app import app, configure_runtime, set_output_folder
+from invoice_renamer.runtime import write_desktop_log, write_exception_log
 
 
 def find_free_port() -> int:
@@ -53,6 +55,7 @@ class DesktopApi:
 
 
 def main() -> None:
+    write_desktop_log("Starting Invoice Renamer desktop app")
     configure_runtime()
     app.config["DESKTOP_MODE"] = True
     port = find_free_port()
@@ -73,5 +76,26 @@ def main() -> None:
     webview.start()
 
 
+def show_startup_error(log_path: str) -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(
+            None,
+            f"冰冰发票改名器启动失败。\n\n错误日志：\n{log_path}",
+            "冰冰发票改名器",
+            0x10,
+        )
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        log_path = write_exception_log(exc)
+        show_startup_error(str(log_path))
+        raise

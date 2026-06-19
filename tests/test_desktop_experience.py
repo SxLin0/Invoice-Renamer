@@ -118,3 +118,12 @@ def test_windows_installer_uses_only_inno_setup_builtin_language_files():
 
     assert "ChineseSimplified.isl" not in script
     assert 'MessagesFile: "compiler:Default.isl"' in script
+
+
+def test_windows_installer_bundles_webview2_bootstrapper():
+    script = Path("installer/windows/InvoiceRenamer.iss").read_text(encoding="utf-8")
+    workflow = Path(".github/workflows/build-desktop.yml").read_text(encoding="utf-8")
+
+    assert "MicrosoftEdgeWebview2Setup.exe" in script
+    assert "/silent /install" in script
+    assert "LinkId=2124703" in workflow
