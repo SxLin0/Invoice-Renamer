@@ -17,6 +17,8 @@ if tesseract_runtime.exists():
     datas.append((str(tesseract_runtime), "runtime/tesseract"))
 
 hiddenimports = collect_submodules("webview")
+if sys.platform == "win32":
+    hiddenimports += ["tkinter", "tkinter.filedialog"]
 
 a = Analysis(
     ["desktop_app.py"],

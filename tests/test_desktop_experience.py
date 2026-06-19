@@ -20,6 +20,35 @@ def test_open_output_folder_endpoint_uses_processed_folder(monkeypatch, tmp_path
     assert called_paths == [tmp_path / "processed"]
 
 
+def test_desktop_runtime_has_default_output_folder(monkeypatch, tmp_path):
+    import app
+
+    monkeypatch.setenv("INVOICE_RENAMER_DATA_DIR", str(tmp_path))
+    app.configure_runtime(desktop=True)
+
+    assert app.app.config["OUTPUT_FOLDER_SELECTED"] is True
+    assert Path(app.app.config["PROCESSED_FOLDER"]) == tmp_path / "Output"
+    assert (tmp_path / "Output").is_dir()
+
+
+def test_set_output_folder_endpoint_updates_processed_folder(monkeypatch, tmp_path):
+    import app
+
+    output_dir = tmp_path / "chosen"
+    monkeypatch.setenv("INVOICE_RENAMER_DATA_DIR", str(tmp_path / "data"))
+    app.configure_runtime(desktop=True)
+
+    client = app.app.test_client()
+    response = client.post("/set-output-folder", json={"path": str(output_dir)})
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "message": "已设置输出文件夹",
+        "output_folder": str(output_dir),
+    }
+    assert Path(app.app.config["PROCESSED_FOLDER"]) == output_dir
+
+
 def test_upload_uses_temporary_source_file_and_removes_it(monkeypatch, tmp_path):
     import app
 
@@ -83,7 +112,11 @@ def test_frontend_has_desktop_output_folder_controls():
     assert "选择输出文件夹" in template
     assert "打开输出文件夹" in template
     assert "window.pywebview.api.select_output_folder" in template
+    assert "id=\"manualOutputPath\"" in template
+    assert "setOutputFolderFromInput" in template
+    assert "withTimeout(" in template
     assert "fetch('/app-info')" in template
+    assert "fetch('/set-output-folder'" in template
     assert "fetch('/open-output-folder', { method: 'POST' })" in template
 
 

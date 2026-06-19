@@ -7,7 +7,11 @@ import webview
 from werkzeug.serving import make_server
 
 from app import app, configure_runtime, set_output_folder
-from invoice_renamer.runtime import write_desktop_log, write_exception_log
+from invoice_renamer.runtime import (
+    webview_storage_path,
+    write_desktop_log,
+    write_exception_log,
+)
 
 
 def find_free_port() -> int:
@@ -29,14 +33,44 @@ class FlaskServer:
         self.thread.join(timeout=3)
 
 
+def select_folder_with_tk(initial_dir: str) -> str | None:
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    try:
+        selected = filedialog.askdirectory(
+            initialdir=initial_dir or None,
+            title="选择输出文件夹",
+            mustexist=True,
+        )
+        return selected or None
+    finally:
+        root.destroy()
+
+
 class DesktopApi:
-    def __init__(self, window=None):
+    def __init__(self, window=None, folder_picker=None):
         self.window = window
+        self.folder_picker = folder_picker or select_folder_with_tk
 
     def bind_window(self, window) -> None:
         self.window = window
 
     def select_output_folder(self) -> dict:
+        if self.folder_picker is not None:
+            selected_folder = self.folder_picker(app.config["PROCESSED_FOLDER"])
+            if not selected_folder:
+                return {
+                    "selected": False,
+                    "output_folder": app.config["PROCESSED_FOLDER"],
+                }
+
+            output_folder = set_output_folder(selected_folder)
+            return {"selected": True, "output_folder": output_folder}
+
         if self.window is None:
             return {
                 "selected": False,
@@ -56,8 +90,7 @@ class DesktopApi:
 
 def main() -> None:
     write_desktop_log("Starting Invoice Renamer desktop app")
-    configure_runtime()
-    app.config["DESKTOP_MODE"] = True
+    configure_runtime(desktop=True)
     port = find_free_port()
     server = FlaskServer(port)
     server.start()
@@ -73,7 +106,7 @@ def main() -> None:
     )
     api.bind_window(window)
     window.events.closed += server.stop
-    webview.start()
+    webview.start(private_mode=False, storage_path=str(webview_storage_path()))
 
 
 def show_startup_error(log_path: str) -> None:

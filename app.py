@@ -14,6 +14,7 @@ from invoice_renamer.extractor import extract_amount
 from invoice_renamer.processor import process_pdf_file
 from invoice_renamer.runtime import (
     configure_tesseract,
+    default_output_dir,
     ensure_work_folders,
     open_folder,
     resource_path,
@@ -28,13 +29,15 @@ app = Flask(
 app.config["MAX_CONTENT_LENGTH"] = 128 * 1024 * 1024
 
 
-def configure_runtime() -> None:
+def configure_runtime(desktop: bool = False) -> None:
     upload_dir, processed_dir = ensure_work_folders()
     app.config["UPLOAD_FOLDER"] = str(upload_dir)
-    app.config["PROCESSED_FOLDER"] = str(processed_dir)
+    app.config["PROCESSED_FOLDER"] = (
+        str(default_output_dir()) if desktop else str(processed_dir)
+    )
     app.config["TESSERACT_BUNDLED"] = configure_tesseract()
-    app.config["DESKTOP_MODE"] = False
-    app.config["OUTPUT_FOLDER_SELECTED"] = False
+    app.config["DESKTOP_MODE"] = desktop
+    app.config["OUTPUT_FOLDER_SELECTED"] = desktop
 
 
 def temporary_upload_name(original_filename: str) -> str:
@@ -74,6 +77,25 @@ def app_info():
             "tesseract_bundled": bool(app.config.get("TESSERACT_BUNDLED", False)),
         }
     )
+
+
+@app.route("/set-output-folder", methods=["POST"])
+def set_output_folder_route():
+    data = request.get_json(silent=True) or {}
+    raw_path = (data.get("path") or "").strip()
+    if not raw_path:
+        return jsonify({"error": "请选择输出文件夹"}), 400
+
+    try:
+        output_folder = set_output_folder(raw_path)
+        return jsonify(
+            {
+                "message": "已设置输出文件夹",
+                "output_folder": output_folder,
+            }
+        )
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/upload", methods=["POST"])

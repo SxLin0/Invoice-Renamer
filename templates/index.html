@@ -236,6 +236,26 @@
             margin-top: 18px;
         }
 
+        .output-path-row {
+            display: none;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .output-path-row.visible {
+            display: grid;
+        }
+
+        .output-path-row input {
+            min-width: 0;
+            min-height: 40px;
+            padding: 9px 11px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: #fff;
+        }
+
         .btn {
             min-height: 40px;
             border: 1px solid transparent;
@@ -395,6 +415,10 @@
                     </div>
                     <div class="empty-state" id="emptyState">等待上传文件</div>
                     <div class="res-list" id="resList"></div>
+                    <div class="output-path-row" id="manualOutputRow">
+                        <input id="manualOutputPath" type="text" placeholder="也可以粘贴输出文件夹路径">
+                        <button class="btn secondary" id="saveOutputPathBtn">保存路径</button>
+                    </div>
                     <div class="actions">
                         <button class="btn secondary" id="chooseOutputBtn" hidden>选择输出文件夹</button>
                         <button class="btn" id="openOutputBtn" hidden>打开输出文件夹</button>
@@ -420,6 +444,9 @@
         const chooseOutputBtn = document.getElementById('chooseOutputBtn');
         const openOutputBtn = document.getElementById('openOutputBtn');
         const resultNote = document.getElementById('resultNote');
+        const manualOutputRow = document.getElementById('manualOutputRow');
+        const manualOutputPath = document.getElementById('manualOutputPath');
+        const saveOutputPathBtn = document.getElementById('saveOutputPathBtn');
         let files = [];
         let processedResults = [];
         let desktopMode = false;
@@ -433,18 +460,54 @@
             chooseOutputBtn.hidden = !desktopMode;
             openOutputBtn.hidden = !desktopMode;
             downloadAllBtn.hidden = desktopMode;
+            manualOutputRow.classList.toggle('visible', desktopMode);
+            manualOutputPath.value = outputFolder;
             resultNote.textContent = desktopMode
                 ? `处理后的文件会直接保存到：${outputFolder || '未选择'}`
                 : '完成后可单个下载，也可打包下载。';
+        }
+
+        function withTimeout(promise, milliseconds) {
+            return Promise.race([
+                promise,
+                new Promise((resolve) => setTimeout(() => resolve({ timedOut: true }), milliseconds)),
+            ]);
+        }
+
+        async function setOutputFolderFromInput() {
+            const path = manualOutputPath.value.trim();
+            if (!path) {
+                alert('请填写输出文件夹路径');
+                return false;
+            }
+            const response = await fetch('/set-output-folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.error || '设置输出文件夹失败');
+                return false;
+            }
+            outputFolder = data.output_folder;
+            manualOutputPath.value = outputFolder;
+            resultNote.textContent = `处理后的文件会直接保存到：${outputFolder}`;
+            return true;
         }
 
         async function chooseOutputFolder() {
             if (!window.pywebview || !window.pywebview.api) {
                 return false;
             }
-            const result = await window.pywebview.api.select_output_folder();
+            const result = await withTimeout(window.pywebview.api.select_output_folder(), 3000);
+            if (result && result.timedOut) {
+                alert('系统文件夹选择窗口没有响应，可以直接粘贴输出文件夹路径。');
+                return false;
+            }
             if (result && result.output_folder) {
                 outputFolder = result.output_folder;
+                manualOutputPath.value = outputFolder;
                 resultNote.textContent = `处理后的文件会直接保存到：${outputFolder}`;
             }
             return Boolean(result && result.selected);
@@ -489,13 +552,6 @@
         }
 
         async function uploadFiles() {
-            if (desktopMode && !outputFolder) {
-                const selected = await chooseOutputFolder();
-                if (!selected) {
-                    alert('请先选择输出文件夹');
-                    return;
-                }
-            }
             const formData = new FormData();
             files.forEach((file) => formData.append('files', file));
             goBtn.disabled = true;
@@ -567,6 +623,7 @@
         goBtn.addEventListener('click', uploadFiles);
         clearBtn.addEventListener('click', clearCurrentList);
         chooseOutputBtn.addEventListener('click', chooseOutputFolder);
+        saveOutputPathBtn.addEventListener('click', setOutputFolderFromInput);
         downloadAllBtn.addEventListener('click', () => {
             window.location.href = '/download-all';
         });

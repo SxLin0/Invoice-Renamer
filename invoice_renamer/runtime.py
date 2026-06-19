@@ -46,8 +46,21 @@ def ensure_work_folders(base_dir: Path | None = None) -> tuple[Path, Path]:
     return upload_dir, processed_dir
 
 
+def default_output_dir(base_dir: Path | None = None) -> Path:
+    root = base_dir or user_data_dir()
+    output_dir = root / "Output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
 def desktop_log_path() -> Path:
     return user_data_dir() / "logs" / "desktop.log"
+
+
+def webview_storage_path() -> Path:
+    path = user_data_dir() / "webview"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def write_desktop_log(message: str) -> Path:
