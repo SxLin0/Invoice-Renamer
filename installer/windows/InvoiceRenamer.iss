@@ -1,4 +1,4 @@
-#define AppName "冰冰发票改名器"
+#define AppName "曹姐发票改名器"
 #define AppVersion GetEnv("APP_VERSION")
 #if AppVersion == ""
   #define AppVersion "0.1.0"
@@ -8,7 +8,7 @@
 AppId={{5D5B4CF4-5A20-48B1-8FA5-B4838334F86BA}
 AppName={#AppName}
 AppVersion={#AppVersion}
-DefaultDirName={localappdata}\Programs\Invoice Renamer
+DefaultDirName={localappdata}\Programs\曹姐发票改名器
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 OutputDir=..\..\dist\installer

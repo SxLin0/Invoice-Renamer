@@ -66,11 +66,11 @@ coll = COLLECT(
 if sys.platform == "darwin":
     app = BUNDLE(
         coll,
-        name="Invoice Renamer.app",
+        name="曹姐发票改名器.app",
         icon=None,
         bundle_identifier="com.invoice-renamer.desktop",
         info_plist={
-            "CFBundleDisplayName": "冰冰发票改名器",
+            "CFBundleDisplayName": "曹姐发票改名器",
             "NSHighResolutionCapable": "True",
         },
     )

@@ -16,3 +16,10 @@ def test_frontend_appends_selected_files_instead_of_replacing_them():
     assert "function addFiles(fileListLike)" in template
     assert "files = [...files, ...newFiles]" in template
     assert "files = Array.from(fileListLike)" not in template
+
+
+def test_frontend_uses_caojie_app_name():
+    template = Path("templates/index.html").read_text(encoding="utf-8")
+
+    assert "曹姐发票改名器" in template
+    assert "冰冰发票改名器" not in template

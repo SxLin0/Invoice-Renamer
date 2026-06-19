@@ -97,7 +97,7 @@ def main() -> None:
     api = DesktopApi()
 
     window = webview.create_window(
-        "冰冰发票改名器",
+        "曹姐发票改名器",
         f"http://127.0.0.1:{port}",
         width=1120,
         height=820,
@@ -117,8 +117,8 @@ def show_startup_error(log_path: str) -> None:
 
         ctypes.windll.user32.MessageBoxW(
             None,
-            f"冰冰发票改名器启动失败。\n\n错误日志：\n{log_path}",
-            "冰冰发票改名器",
+            f"曹姐发票改名器启动失败。\n\n错误日志：\n{log_path}",
+            "曹姐发票改名器",
             0x10,
         )
     except Exception:

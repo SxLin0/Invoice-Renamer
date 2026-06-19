@@ -11,12 +11,12 @@ def test_user_data_dir_uses_platform_app_location(monkeypatch, tmp_path):
     from invoice_renamer.runtime import user_data_dir
 
     if sys.platform == "darwin":
-        expected = tmp_path / "Library" / "Application Support" / "Invoice Renamer"
+        expected = tmp_path / "Library" / "Application Support" / "曹姐发票改名器"
     elif sys.platform == "win32":
         monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "LocalAppData"))
-        expected = tmp_path / "LocalAppData" / "Invoice Renamer"
+        expected = tmp_path / "LocalAppData" / "曹姐发票改名器"
     else:
-        expected = tmp_path / ".local" / "share" / "Invoice Renamer"
+        expected = tmp_path / ".local" / "share" / "曹姐发票改名器"
 
     assert user_data_dir() == expected
 

@@ -153,6 +153,13 @@ def test_windows_installer_uses_only_inno_setup_builtin_language_files():
     assert 'MessagesFile: "compiler:Default.isl"' in script
 
 
+def test_windows_installer_uses_caojie_app_name():
+    script = Path("installer/windows/InvoiceRenamer.iss").read_text(encoding="utf-8")
+
+    assert '#define AppName "曹姐发票改名器"' in script
+    assert "冰冰发票改名器" not in script
+
+
 def test_windows_installer_bundles_webview2_bootstrapper():
     script = Path("installer/windows/InvoiceRenamer.iss").read_text(encoding="utf-8")
     workflow = Path(".github/workflows/build-desktop.yml").read_text(encoding="utf-8")

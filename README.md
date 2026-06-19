@@ -1,4 +1,4 @@
-# Invoice Renamer
+# 曹姐发票改名器
 
 一个简单的 PDF 发票改名工具：上传发票后自动识别价税合计金额，并把文件重命名为 `金额.pdf`，例如 `15.81.pdf`。
 
@@ -74,9 +74,9 @@ Windows 用户下载 `InvoiceRenamerSetup.exe` 后双击安装。macOS 用户下
 运行时上传文件和处理后文件保存在用户数据目录中：
 
 ```text
-Windows: %LOCALAPPDATA%\Invoice Renamer
-macOS: ~/Library/Application Support/Invoice Renamer
-Linux: ~/.local/share/Invoice Renamer
+Windows: %LOCALAPPDATA%\曹姐发票改名器
+macOS: ~/Library/Application Support/曹姐发票改名器
+Linux: ~/.local/share/曹姐发票改名器
 ```
 
 ## 使用方法

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_PATH="dist/Invoice Renamer.app"
+APP_PATH="dist/曹姐发票改名器.app"
 DMG_PATH="dist/InvoiceRenamer-macos.dmg"
-VOLUME_NAME="冰冰发票改名器"
+VOLUME_NAME="曹姐发票改名器"
 
 if [[ ! -d "$APP_PATH" ]]; then
   echo "Missing app bundle: $APP_PATH" >&2

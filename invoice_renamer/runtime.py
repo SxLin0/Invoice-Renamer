@@ -7,7 +7,7 @@ from pathlib import Path
 import pytesseract
 
 
-APP_NAME = "Invoice Renamer"
+APP_NAME = "曹姐发票改名器"
 
 
 def is_frozen() -> bool:
